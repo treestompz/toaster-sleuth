@@ -3,16 +3,17 @@ dotenv.config()
 const fs = require('fs')
 const path = require('path')
 const puppeteer = require('puppeteer')
+const axios = require('axios')
 
-const IS_PROD = true
-
-const WAIT_TIME = IS_PROD ? 15000 : 3000
-const LOOP_WAIT = IS_PROD ? 1000 * 60 * 15 : 1000 * 20
 const LINKS_JSON_PATH = path.join('./', 'links.json')
-const BLOCK_SLACK_MSG = true
+const IS_PROD = process.env.IS_PROD === 'true'
+const BLOCK_SLACK_MSG = process.env.BLOCK_SLACK_MSG === 'true'
+const ZIP_CODE = process.env.ZIP_CODE
+
+const LOOP_WAIT = IS_PROD ? 1000 * 60 * 15 : 1000 * 20
+const WAIT_TIME = IS_PROD ? 15000 : 3000
 const HEADLESS = true
 const VIEWPORT = { width: 1280, height: 800 }
-const ZIP_CODE = process.env.ZIP_CODE
 
 const start = async () => {
   console.log('start', new Date().toLocaleString())
@@ -39,6 +40,11 @@ const sendSlackMsg = (msg) => {
   }
 
   console.log(`slack: ${msg}`)
+
+  axios.post(process.env.SLACK_WEBHOOK, { text: msg }).catch((err) => {
+    console.log('Error while posting to slack')
+    console.error(err)
+  })
 }
 
 // since perf isn't an issue, we just read file each time

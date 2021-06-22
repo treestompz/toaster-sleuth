@@ -3,6 +3,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "dotenv": "^10.0.0",
     "puppeteer": "^10.0.0"
   }
