@@ -9,10 +9,10 @@ const LINKS_JSON_PATH = path.join('./', 'links.json')
 const IS_PROD = process.env.IS_PROD === 'true'
 const BLOCK_SLACK_MSG = process.env.BLOCK_SLACK_MSG === 'true'
 const ZIP_CODE = process.env.ZIP_CODE
+const HEADLESS = process.env.HEADLESS === 'true'
 
 const LOOP_WAIT = IS_PROD ? 1000 * 60 * 15 : 1000 * 20
 const WAIT_TIME = IS_PROD ? 15000 : 3000
-const HEADLESS = true
 const VIEWPORT = { width: 1280, height: 800 }
 
 const start = async () => {
@@ -89,6 +89,9 @@ const sleuthCarfax = async () => {
   await page.select('select[name="radius"]', '500')
   await page.waitForTimeout(WAIT_TIME)
   await page.click('#make-model-form-submit')
+  await page.waitForTimeout(WAIT_TIME)
+
+  await page.select('select[aria-label="SelectSort"]', 'MILEAGE_ASC')
   await page.waitForTimeout(WAIT_TIME)
 
   // click orange
