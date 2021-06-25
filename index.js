@@ -10,22 +10,99 @@ const IS_PROD = process.env.IS_PROD === 'true'
 const BLOCK_SLACK_MSG = process.env.BLOCK_SLACK_MSG === 'true'
 const ZIP_CODE = process.env.ZIP_CODE
 const HEADLESS = process.env.HEADLESS === 'true'
+const TIMEZONE = process.env.HC_TIMEZONE
 
 const LOOP_WAIT = IS_PROD ? 1000 * 60 * 15 : 1000 * 20
 const WAIT_TIME = IS_PROD ? 15000 : 3000
 const VIEWPORT = { width: 1280, height: 800 }
 
+// healthCheck
+const HEALTH_CHECK_WITHIN_TIME = 1000 * 60 * 60
+let lastSleuths = [] // {name,createdDate,linksCount}
+// set 2 times to send health check notifications
+const HEALTH_CHECK_NOTIF_FIRST_TIME = 12 // noon
+const HEALTH_CHECK_NOTIF_SECOND_TIME = 20 // 8pm
+// let lastHealthCheckNotif = HEALTH_CHECK_NOTIF_FIRST_TIME
+let lastHealthCheckNotif = HEALTH_CHECK_NOTIF_SECOND_TIME
+
 const start = async () => {
-  console.log('start', new Date().toLocaleString())
+  console.log('start', getCurrentTimezoneDate().toLocaleString(), TIMEZONE)
+
+  lastSleuths = []
 
   await sleuthCarGurus()
   await sleuthCarfax()
 
-  console.log(`Waiting ${msToMinSec(LOOP_WAIT)} until looping start...`)
+  await healthCheck()
 
   setTimeout(() => {
     start()
   }, LOOP_WAIT)
+  console.log(`Waiting ${msToMinSec(LOOP_WAIT)} until looping start...`)
+}
+
+// not meant to catch errors, just send
+// notification its still working
+const healthCheck = async () => {
+  let allGood = true
+
+  for (let i = 0; i < lastSleuths.length; i++) {
+    let ls = lastSleuths[i]
+
+    console.log('healthCheck:', ls)
+
+    if (ls.linksCount == 0) {
+      console.log('! linksCount was 0')
+      allGood = false
+      break
+    }
+    // if the sleuth was added recently enough
+    if (getCurrentTimezoneDate() - ls.createdDate > HEALTH_CHECK_WITHIN_TIME) {
+      console.log('! sleuth not added recently enough')
+      allGood = false
+      break
+    }
+  }
+
+  let hcMsg = 'Health Check: '
+  if (allGood) {
+    hcMsg += 'OK'
+    console.log(hcMsg)
+  } else {
+    hcMsg += 'ERROR'
+    console.log(hcMsg)
+  }
+
+  if (shouldNotifyOfHealthCheck()) {
+    sendSlackMsg(hcMsg)
+  }
+}
+
+const shouldNotifyOfHealthCheck = () => {
+  let h = getCurrentTimezoneDate().getHours()
+
+  if (lastHealthCheckNotif === HEALTH_CHECK_NOTIF_FIRST_TIME) {
+    if (h >= HEALTH_CHECK_NOTIF_SECOND_TIME) {
+      console.log('Past 8pm shouldNotifyOfHealthCheck true')
+      lastHealthCheckNotif = HEALTH_CHECK_NOTIF_SECOND_TIME
+      return true
+    }
+  } else if (lastHealthCheckNotif === HEALTH_CHECK_NOTIF_SECOND_TIME) {
+    if (h >= HEALTH_CHECK_NOTIF_FIRST_TIME) {
+      console.log('Past 12pm shouldNotifyOfHealthCheck true')
+      lastHealthCheckNotif = HEALTH_CHECK_NOTIF_FIRST_TIME
+      return true
+    }
+  }
+
+  console.log('shouldNotifyOfHealthCheck false')
+  return false
+}
+
+// this is a hack to not worry about system clocks...i think
+const getCurrentTimezoneDate = () => {
+  let s = new Date().toLocaleString('en-US', { timeZone: TIMEZONE })
+  return new Date(s)
 }
 
 const msToMinSec = (ms) => {
@@ -70,6 +147,12 @@ const handleLinks = async (source, links) => {
   for (let i = 0; i < links.length; i++) {
     await handleLink(links[i])
   }
+
+  lastSleuths.push({
+    source,
+    createdDate: getCurrentTimezoneDate(),
+    linksCount: links.length,
+  })
 }
 
 const sleuthCarfax = async () => {
