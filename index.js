@@ -88,7 +88,10 @@ const shouldNotifyOfHealthCheck = () => {
       return true
     }
   } else if (lastHealthCheckNotif === HEALTH_CHECK_NOTIF_SECOND_TIME) {
-    if (h >= HEALTH_CHECK_NOTIF_FIRST_TIME) {
+    if (
+      h >= HEALTH_CHECK_NOTIF_FIRST_TIME &&
+      h < HEALTH_CHECK_NOTIF_SECOND_TIME
+    ) {
       console.log('Past 12pm shouldNotifyOfHealthCheck true')
       lastHealthCheckNotif = HEALTH_CHECK_NOTIF_FIRST_TIME
       return true
