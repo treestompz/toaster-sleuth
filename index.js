@@ -13,7 +13,7 @@ const HEADLESS = process.env.HEADLESS === 'true'
 const TIMEZONE = process.env.HC_TIMEZONE
 
 const LOOP_WAIT = IS_PROD ? 1000 * 60 * 15 : 1000 * 20
-const WAIT_TIME = IS_PROD ? 15000 : 3000
+const WAIT_TIME = IS_PROD ? 30000 : 3000
 const VIEWPORT = { width: 1280, height: 800 }
 
 // healthCheck
