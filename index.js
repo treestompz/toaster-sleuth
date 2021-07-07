@@ -36,8 +36,8 @@ const start = async () => {
   } catch (e) {
     console.error(e)
     sendSlackMsg(e.toString().substring(0, 200))
-    process.exit(1)
     console.log('exiting...')
+    process.exit(1)
   }
 
   await healthCheck()
