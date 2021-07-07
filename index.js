@@ -30,8 +30,15 @@ const start = async () => {
 
   lastSleuths = []
 
-  await sleuthCarGurus()
-  await sleuthCarfax()
+  try {
+    await sleuthCarGurus()
+    await sleuthCarfax()
+  } catch (e) {
+    console.error(e)
+    sendSlackMsg(e.toString().substring(0, 200))
+    process.exit(1)
+    console.log('exiting...')
+  }
 
   await healthCheck()
 
